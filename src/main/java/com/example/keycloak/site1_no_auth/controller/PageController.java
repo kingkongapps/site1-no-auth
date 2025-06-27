@@ -14,6 +14,9 @@ public class PageController {
     @GetMapping(value = "/admin/admin-test1")
     public String goAdminTest1() {
         System.out.println("goAdminTest1()...");
+//        SecurityContext context = SecurityContextHolder.getContext();
+//        Object object = context.getAuthentication();
+
         return "/admin/admin-test1";
     }
 

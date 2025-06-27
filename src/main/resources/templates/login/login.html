@@ -15,5 +15,129 @@
     </form>
     <a href="#">회원가입</a>
 </div>
+
+<HR>
+
+<h1>Keycloak 로그인 테스트</h1>
+<button id="loginButton">Keycloak 로그인하기</button>
+<div id="result"></div>
+
+<script>
+    const keycloakConfig = {
+      authEndpoint: 'https://www.kingkongapps.kr:30000/realms/SSO-TEST/protocol/openid-connect/auth',
+      tokenEndpoint: 'https://www.kingkongapps.kr:30000/realms/SSO-TEST/protocol/openid-connect/token',
+
+      clientId: 'sso-test-front',
+      redirectUri: 'https://www.kingkongapps.kr:38080/login'
+//      redirectUri: 'http://localhost:38080/login'
+    };
+
+    async function buildAuthUrl() {
+      const state = generateRandomString();
+      const nonce = generateRandomString();
+      const code_verifier = generateCodeVerifier();
+      const code_challenge = await generateCodeChallenge(code_verifier);
+      sessionStorage.setItem('code_verifier', code_verifier);
+
+      console.log('code_verifier=' + code_verifier);
+      console.log('code_challenge=' + code_challenge);
+
+      const params = new URLSearchParams({
+        client_id: keycloakConfig.clientId,
+        redirect_uri: keycloakConfig.redirectUri,
+        response_type: 'code',
+        scope: 'openid',
+        state: state,
+        nonce: nonce,
+        kc_locale: 'en',
+        code_challenge: code_challenge,
+        code_challenge_method: 'S256'
+      });
+
+      console.log(params.toString());
+
+      return `${keycloakConfig.authEndpoint}?${params.toString()}`;
+    }
+
+    function generateRandomString() {
+      return Math.random().toString(36).substring(2, 15);
+    }
+
+    function generateCodeVerifier() {
+      const array = new Uint8Array(32);
+      window.crypto.getRandomValues(array);
+      return base64UrlEncode(array);
+    }
+
+    async function generateCodeChallenge(codeVerifier) {
+      const data = new TextEncoder().encode(codeVerifier);
+      const digest = await window.crypto.subtle.digest("SHA-256", data);
+      return base64UrlEncode(digest);
+    }
+    function base64UrlEncode(buffer) {
+      return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    }
+
+    async function redirectToLogin() {
+      const authUrl = await buildAuthUrl();
+      window.location.href = authUrl;
+    }
+
+    async function exchangeCodeForToken(code) {
+      const code_verifier = sessionStorage.getItem('code_verifier');
+      //
+      const params = new URLSearchParams();
+      params.append('grant_type', 'authorization_code');
+      params.append('code', code);
+      params.append('code_verifier', code_verifier);
+      params.append('redirect_uri', keycloakConfig.redirectUri);
+      params.append('client_id', keycloakConfig.clientId);
+
+      try {
+        const response = await fetch(keycloakConfig.tokenEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: params
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          console.error('Token exchange failed:', error);
+          document.getElementById('result').innerHTML = `<pre style="color:red;">Token exchange failed: ${error}</pre>`;
+          return;
+        }
+
+        const data = await response.json();
+        console.log('Access Token:', data.access_token);
+        console.log('ID Token:', data.id_token);
+        console.log('Refresh Token:', data.refresh_token);
+        document.getElementById('result').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+      } catch (err) {
+        console.error('Error during token exchange:', err);
+        document.getElementById('result').innerHTML = `<pre style="color:red;">Error: ${err.message}</pre>`;
+      }
+    }
+
+    function getAuthorizationCodeFromURL() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('code');
+    }
+
+    // 이벤트 바인딩
+    document.getElementById('loginButton').addEventListener('click', redirectToLogin);
+
+    // 페이지 로드 시 code 있으면 토큰 교환 시도
+    const code = getAuthorizationCodeFromURL();
+//    alert('code=' + code);
+    if (code) {
+      exchangeCodeForToken(code);
+    }
+</script>
 </body>
 </html>
+
