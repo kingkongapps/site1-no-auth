@@ -44,4 +44,34 @@ public class PageController {
         return "/login/login";
     }
 
+    @GetMapping(value = "/login_wmd")
+    public String goLoginWMW() {
+        System.out.println("goLogin_WMD()...");
+        return "/login/login_wmd";
+    }
+
+    @GetMapping(value = "/login3")
+    public String goLogin3() {
+        System.out.println("goLogin(3)...");
+        return "/login/login3";
+    }
+
+    @GetMapping(value = "/login_google")
+    public String goLoginGoogle() {
+        System.out.println("goLogin-google()...");
+        return "/login/login_google";
+    }
+
+    @GetMapping(value = "/login_naver")
+    public String goLoginNaver() {
+        System.out.println("goLogin-naver()...");
+        return "/login/login_naver";
+    }
+
+    @GetMapping(value = "/login_kakao")
+    public String goLoginKakao() {
+        System.out.println("goLogin-kakao()...");
+        return "/login/login_kakao";
+    }
+
 }

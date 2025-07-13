@@ -7,7 +7,7 @@
 <body>
 <th:block th:replace="/fragments/header"></th:block>
 <div class="login-container">
-    <h1>로그인</h1>
+    <h1>로그인-WMD</h1>
     <form id="loginForm" action="#" method="post">
         <input type="text" id="lang" name="lang" placeholder="Language" required />
         <input type="text" id="id" name="id" placeholder="아이디" required />
@@ -27,9 +27,10 @@
     const keycloakConfig = {
       authEndpoint: 'https://dev-auth.nwcgm.com/realms/nwc/protocol/openid-connect/auth',
       tokenEndpoint: 'https://dev-auth.nwcgm.com/realms/nwc/protocol/openid-connect/token',
+      tokenEndpoint2: 'https://dev-iam.nwcgm.com/api/jwt',
 
       clientId: 'wmd-client',
-      redirectUri: 'https://www.kingkongapps.kr:38080/login'
+      redirectUri: 'https://www.kingkongapps.kr:38080/login_wmd'
     };
 
     async function buildAuthUrl() {
@@ -90,6 +91,7 @@
     }
 
     async function exchangeCodeForToken(code) {
+
     alert('2..code->token...');
 
       const code_verifier = sessionStorage.getItem('code_verifier');
@@ -101,13 +103,12 @@
       params.append('redirect_uri', keycloakConfig.redirectUri);
       params.append('client_id', keycloakConfig.clientId);
 
+      const urlWithParams = `${keycloakConfig.tokenEndpoint2}?${params.toString()}`;
+
       try {
-        const response = await fetch(keycloakConfig.tokenEndpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body: params
+        const response = await fetch(urlWithParams, {
+          method: 'GET',
+          // Content-Type 헤더는 GET에서는 일반적으로 필요 없음
         });
 
         if (!response.ok) {
